@@ -1,15 +1,11 @@
 """Display user menu that allows user to back up organize directories,
    back up directories, change settings, or quit.
 """
-import time
-import chime
-
-import backup
 import cursor
+import backup
 import organize
 import settings
-import utilities
-from utilities import Directory
+import common
 
 
 def main():
@@ -20,8 +16,8 @@ def main():
     quit_menu = False
 
     while not quit_menu:
-        utilities.clear()
-        header = utilities.box("Manage savestates")
+        common.clear()
+        header = common.box("Manage savestates")
         print(f"{header}\n")
         for i, option in enumerate(menu_options):
             if option == "Quit":
@@ -32,7 +28,7 @@ def main():
         choice_val = ""
         while not (choice_val.isdigit()
                    and 0 < int(choice_val) <= len(menu_options)):
-            choice_val = utilities.getch()
+            choice_val = common.getch()
         choice = menu_options[int(choice_val) - 1]
 
         if choice == "Organize directories":
@@ -42,29 +38,5 @@ def main():
         elif choice == "Settings":
             settings.settings()
         elif choice == "Quit":
-            quit_menu = exit_screen(quit_menu)
-
-
-def exit_screen(quit_menu):
-    """Shows splash screen when program is exiting."""
-    chime.theme("mario")
-    chime.info()
-    utilities.clear()
-    print("\n\n\n                    Come again!\n\n\n"
-        "               ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇\n"
-        "               ⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⠿⠿⢿⡿⢿⣿⣿⣿⠃\n"
-        "               ⣿⣿⣿⣿⣿⣿⣥⣄⣀⣀⠀⠀⠀⠀⠀⢰⣾⣿⣿⠏\n"
-        "               ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣤⣜⡻⠋\n"
-        "               ⣿⣿⡿⣿⣿⣿⣿⠿⠿⠟⠛⠛⠛⠋⠉⠉⢉⡽⠃\n"
-        "               ⠉⠛⠛⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⡤⠚⠉\n"
-        "               ⣿⠉⠛⢶⣶⣄⠀⠀⠀⠀⠀⠀⠀⠀⡇\n"
-        "               ⠟⠃⠀⠀⠀⠈⠲⣴⣦⣤⣤⣤⣶⡾⠁\n\n")
-    time.sleep(.5)
-    cursor.show()
-    utilities.clear()
-
-    quit_menu = True
-    return quit_menu
-
-
-main()
+            quit_menu = common.exit_screen(quit_menu)
+            cursor.show()

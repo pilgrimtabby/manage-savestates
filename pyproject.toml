@@ -2,11 +2,12 @@
 name = "manage-savestates"
 dependencies = [
     "chime",
+    "cursor",
     "win32gui; platform_system == 'Windows'",
     "pywin32; platform_system == 'Windows'",
     "msvcrt; platform_system == 'Windows'",
 ]
-version = "1.0.14"
+version = "1.1"
 authors = [
   { name="pilgrim_tabby", email="pilgrimtabby@gmail.com" },
 ]
@@ -29,7 +30,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-mansav = "manage_savestates:main"
+mansav = "manage_savestates.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/manage_savestates"]
