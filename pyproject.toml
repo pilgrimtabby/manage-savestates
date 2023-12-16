@@ -1,0 +1,35 @@
+[project]
+name = "manage-savestates"
+dependencies = [
+    "chime",
+    "win32gui; platform_system == 'Windows'",
+    "pywin32; platform_system == 'Windows'",
+    "msvcrt; platform_system == 'Windows'",
+]
+version = "1.0"
+authors = [
+  { name="pilgrim_tabby", email="pilgrimtabby@gmail.com" },
+]
+description = "Manages savestates and macros made with gz"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+]
+
+[project.urls]
+Homepage = "https://github.com/pilgrimtabby/manage-savestates"
+Issues = "https://github.com/pilgrimtabby/manage-savestates/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+mansav = "managesavestates:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
