@@ -4,18 +4,20 @@ import pickle
 import platform
 import subprocess
 import sys
-import termios
 import time
 import tkinter
 import tkinter.filedialog
-import tty
 from dataclasses import dataclass
-import chime
-try: # importing Windows-only module
+
+if platform.system() == "Windows":
     import msvcrt
     import win32gui
-except ImportError:
-    pass
+else:
+    import termios
+    import tty
+
+import chime
+
 
 @dataclass
 class Directory:
