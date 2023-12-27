@@ -1,8 +1,12 @@
 """Display user menu that allows user to back up organize directories,
    back up directories, change settings, or quit.
 """
+import platform
 import time
-import chime
+
+if platform.system() != "Windows":
+    import chime
+
 import advanced_cursor
 import directories
 import settings
@@ -47,8 +51,9 @@ def main():
 def exit_screen():
     """Shows splash screen when program is exiting."""
     advanced_cursor.hide()
-    chime.theme("mario")
-    chime.info()
+    if platform.system() != "Windows":
+        chime.theme("mario")
+        chime.info()
     common.clear()
     print("\n\n\n               Come again soon!\n\n\n"
         "               ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇\n"
