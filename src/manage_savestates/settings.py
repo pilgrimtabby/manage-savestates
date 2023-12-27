@@ -100,6 +100,8 @@ def remove_dir():
                     common.dump_pickle(dirs, "dirs.txt")
                     print(f"\nSuccessfully removed {choice_dir.path} from this program's list")
                     time.sleep(1)
+                    if len(dirs) == 0:
+                        quit_menu = True
             else:
                 print("Not a valid option! Please try again.")
                 time.sleep(1)
@@ -119,25 +121,24 @@ def change_dir_settings():
         print(f"{header}\n")
         if len(dirs) > 0:
             for i, directory in enumerate(dirs):
-                print(f"{str(i + 1)}: {directory.path} "
-                      f"(setting: {directory.action.lower()})")
+                if directory.action is not None:
+                    print(f"{str(i + 1)}: {directory.path} (setting: {directory.action})")
+                else:
+                    print(f"{str(i + 1)}: {directory.path} (setting: do nothing)")
             print(f"\n{str(len(dirs) + 1)}: Go back")
 
-            user_input = input(f"\nChoose an option (1 - {len(dirs) + 1}): ")
+            user_input = input(f"\nChoose a directory, or go back (1 - {len(dirs) + 1}): ")
             if user_input.isdigit() and int(user_input) == len(dirs) + 1:  # "Go back"
                 quit_menu = True
             elif user_input.isdigit() and 0 < int(user_input) <= len(dirs):
                 choice_index = int(user_input) - 1
                 choice_dir = dirs[choice_index]
+
                 common.clear()
                 print(f"{header}\n")
+                choice_dir.action = get_dir_settings(choice_dir.path)
 
-                new_dir_action = get_dir_settings(choice_dir.path)
-
-                # Delete directory and re-add it with correct setting
-                new_dir = Directory(choice_dir.path, new_dir_action)
-                del dirs[choice_index]
-                dirs += [new_dir]
+                dirs[choice_index] = choice_dir
                 common.dump_pickle(dirs, "dirs.txt")
             else:
                 print("Not a valid option! Please try again.")
@@ -145,6 +146,7 @@ def change_dir_settings():
         else:
             print("No directories have been added yet!")
             time.sleep(1)
+            quit_menu = True
 
 
 def change_backups_destination():
