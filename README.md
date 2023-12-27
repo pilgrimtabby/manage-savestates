@@ -26,7 +26,7 @@ Renumbers savestates from 000 up to 999 in the order they are displayed in gz's 
 
 Additionally, macros that have the same name as a savestate are numbered to match their corresponding savestates. For example, if you have a savestate called "021-dot skip.gzs" and a macro called "dot skip.gzm", the macro will be renamed "021-dot skip.gzm". Duplicate macros and macros with no matching savestate are moved to a subfolder called "_other" to keep folders organized (the underscore puts it at the top of the file explorer in gz).
 
-For quality-of-life purposes, the program creates an empty macro for each savestate that doesn't have a corresponding macro (e.g., for a state "042-wasteland hess.gzs" with no matching macro, the empty macro "042-.gzm" is generated). This means that when loading macros in gz, the cursor will always at the same place in savestate and macro lists, avoiding the bug that forces you to reload the SD card.
+For quality-of-life purposes, the program creates an empty macro for each savestate that doesn't have a corresponding macro (e.g., for a state "042-wasteland hess.gzs" with no matching macro, the empty macro "042-.gzm" is generated). This means that when loading macros in gz, the cursor will always be at the same place in savestate and macro lists, avoiding the bug that forces you to reload the SD card.
 
 #### Do nothing
 
