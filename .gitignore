@@ -1,2 +1,5 @@
 
 .DS_Store
+src/manage_savestates/__pycache__/settings.cpython-312.pyc
+*.pyc
+*.txt

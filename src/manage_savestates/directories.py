@@ -1,9 +1,11 @@
-"""Organize gz files inside of a directory"""
+"""Organize and back up gz files inside of a directory."""
 import os
+import shutil
+import time
 from dataclasses import dataclass
 from datetime import date, datetime
 import common
-from common import Directory
+import settings
 
 
 @dataclass
@@ -16,26 +18,27 @@ class GZFile:
 
 
 def organize():
-    """Get list of savestates and macros and pass it to reorder_files()
+    """Get list of savestates and macros and pass it to renumber_files()
     or trim_files().
     """
     header = common.box("Manage savestates | Organize files")
-    common.clear()
-    print(f"{header}\n")
-
     dirs = common.load_pickle("dirs.txt")
-    # Prompt user to select some directories if none are saved
     if dirs == []:
-        common.no_dirs_edge_case_handling()
+        common.clear()
+        print(f"{header}\n\nNo directories have been added yet!\nGoing to settings...")
+        time.sleep(2)
+        settings.add_dir()
         dirs = common.load_pickle("dirs.txt")
         if dirs == []:
             return
+    common.clear()
+    print(f"{header}\n")
+
     for directory in dirs:
-        # Warn about and skip paths that don't lead anywhere
         if not os.path.exists(directory.path):
-            print(f"{directory.path} could not be found. Please verify path in settings.")
-        # Organize directories that have an associated action
+            print(f"{directory.path} could not be found. Skipping...")
         elif directory.action is not None:
+            print(f"Organizing files in {directory.path}")
             # Get all savestate and macro files into their own lists
             raw_gz_files = sorted([x for x in os.listdir(directory.path)
                                    if (x.endswith(".gzs") or x.endswith(".gzm"))
@@ -56,21 +59,40 @@ def organize():
             # Add _other folder if it doesn't exist, and start the log
             if not os.path.exists(f"{directory.path}/_other"):
                 os.mkdir(f"{directory.path}/_other")
-            current_date_and_time = (f"{date.today().strftime('%B %d, %Y')} at"
-                                     f" {datetime.now().strftime('%H:%M:%S')}")
+            timestamp = (f"{date.today().strftime('%B %d, %Y')} at "
+                         f"{datetime.now().strftime('%H:%M:%S')}")
             log_path = f"{directory.path}/log.txt"
-            write_to_log(f"\n{current_date_and_time}\n", log_path)
+            write_to_log(f"\n{timestamp}\n", log_path)
 
-            if directory.action == "reorder":
-                reorder_files(directory.path, states, macros)
+            if directory.action == "renumber":
+                renumber_files(directory.path, states, macros)
             elif directory.action == "trim":
                 trim_files(directory.path, states + macros)
 
-            # Shorten log if it's too long (> 2 MB)
+            remove_empty_log_entry(log_path, timestamp)
+            remove_newline_at_top(log_path)
             truncate_log(log_path, 2000000)
 
-    print("Done! Press any key to exit.")
-    common.getch()
+    input("Done! Press enter to exit: ")
+
+
+def remove_empty_log_entry(log_path, timestamp):
+    with open(log_path, "r", encoding="UTF-8") as log:
+        log_contents = log.readlines()
+    if log_contents[-1] == f"{timestamp}\n":
+        with open(log_path, "w", encoding="UTF-8") as log:
+            log_contents[-2] = ""
+            log_contents[-1] = ""
+            log.writelines(log_contents)
+
+
+def remove_newline_at_top(log_path):
+    with open(log_path, "r", encoding="UTF-8") as log:
+        log_contents = log.readlines()
+    if len(log_contents) > 0 and log_contents[0] == "\n":
+        with open(log_path, "w", encoding="UTF-8") as log:
+            log_contents[0] = ""
+            log.writelines(log_contents)
 
 
 def package(file):
@@ -89,7 +111,7 @@ def package(file):
     return packaged_file
 
 
-def reorder_files(directory, states, macros):
+def renumber_files(directory, states, macros):
     """Numbers savestates in the order they are found in the directory,
     renumbers macros to match savestates of the same name, and moves
     all other macros to _other.
@@ -117,8 +139,7 @@ def reorder_files(directory, states, macros):
             if state.text_of_name == macro.text_of_name:
                 break
         else:
-            with open(f"{directory}/{state.prefix}.gzm", "a",
-                      encoding="utf-8"):
+            with open(f"{directory}/{state.prefix}.gzm", "a", encoding="utf-8"):
                 pass
 
 
@@ -250,4 +271,43 @@ def write_to_log(txt, log_path):
     """Writes text to the file at log_path."""
     with open(log_path, "a", encoding="utf-8") as file:
         file.write(txt)
-    file.close()
+
+
+def back_up():
+    """Backs up all directories saved in the program to a specified backup directory
+    (the directory can be changed in settings)."""
+    header = common.box("Manage savestates | Back up directories")
+    dirs = common.load_pickle("dirs.txt")
+    if dirs == []:
+        common.clear()
+        print(f"{header}\n\nNo directories have been added yet!")
+        time.sleep(2)
+        return
+
+    backups_path = common.load_pickle("backups_path.txt")
+    if backups_path == [] or not os.path.exists(backups_path):
+        common.clear()
+        print(f"{header}\n\nPlease select a directory to store backups:")
+        backups_path = common.get_dir_path()
+        if backups_path == "":
+            return
+        common.dump_pickle(backups_path, "backups_path.txt")
+
+    common.clear()
+    print(f"{header}\n\nNow backing up:")
+    # for each directory, back up to its own timestamped folder within the backup directory
+    for directory in dirs:
+        print(f"{directory.path}")
+
+        dir_name = os.path.basename(directory.path)
+        if not os.path.isdir(f"{backups_path}/{dir_name}"):
+            os.mkdir(f"{backups_path}/{dir_name}")
+        timestamp = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        backup_path = f"{backups_path}/{dir_name}/{timestamp}"
+
+        try:
+            shutil.copytree(directory.path, backup_path, ignore_dangling_symlinks=True)
+        except shutil.Error as error:
+            print(f"Some files were not copied:\n{error}")
+
+    input("\nDone! Press enter to return to the main menu: ")

@@ -1,162 +1,185 @@
 """Module with code for settings menu."""
 import time
+from dataclasses import dataclass
 import common
-from common import Directory
 
 
-def settings():
+@dataclass
+class Directory:
+    """Stores data about directories organized by directories.organize()."""
+    path: str
+    action: str
+
+
+def main():
     """Menu to change program settings."""
-    menu_options = [
-        "Add or remove directory", "Change existing directory settings",
-        "Change where backups go", "Go back"
-    ]
+    menu_options = ["Add directory", "Remove directory", "Change directory settings",
+                    "Change where backups go", "Go back"]
     quit_menu = False
     while not quit_menu:
 
-        common.clear()
         header = common.box("Manage savestates | Settings")
-        print(f"{header}\n")
-        for i, option in enumerate(menu_options):
-            if option == "Go back":
-                print("")
-            print(f"{str(i + 1)}: {option}")
-        print(f"\nChoose an option (1 - {len(menu_options)}): ")
-        choice_val = ""
-        while not (
-                   choice_val.isdigit()
-                   and 0 < int(choice_val) <= len(menu_options)
-        ):
-            choice_val = common.getch()
-        choice = menu_options[int(choice_val) - 1]
-
-        if choice == "Add or remove directory":
-            add_or_remove_submenu()
-        elif choice == "Change existing directory settings":
-            change_dir_settings()
-        elif choice == "Change where backups go":
-            change_backups_destination()
-        elif choice == "Go back":
-            quit_menu = True
-
-
-def add_or_remove_submenu():
-    """Menu where user can choose to add or remove a directory."""
-    menu_options = ["Add directory", "Remove directory", "Go back"]
-    quit_menu = False
-    while not quit_menu:
-        header = common.box("Manage savestates | Settings | Directories")
         common.clear()
         print(f"{header}\n")
         for i, option in enumerate(menu_options):
             if option == "Go back":
                 print("")
             print(f"{str(i + 1)}: {option}")
-        print(f"\nChoose an option (1 - {len(menu_options)}): ")
 
-        # Wait for user to input a valid value
-        choice_val = ""
-        while not (choice_val.isdigit() and 0 < int(choice_val) <= len(menu_options)):
-            choice_val = common.getch()
-        choice = menu_options[int(choice_val) - 1]
+        user_input = input(f"\nChoose an option (1 - {len(menu_options)}): ")
+        if user_input.isdigit() and 0 < int(user_input) <= len(menu_options):
+            choice = menu_options[int(user_input) - 1]
+            if choice == "Add directory":
+                add_dir()
+            elif choice == "Remove directory":
+                remove_dir()
+            elif choice == "Change directory settings":
+                change_dir_settings()
+            elif choice == "Change where backups go":
+                change_backups_destination()
+            elif choice == "Go back":
+                quit_menu = True
+        else:
+            print("Not a valid option! Please try again.")
+            time.sleep(1)
 
-        if choice == "Add directory":
-            common.add_dir()
-        elif choice == "Remove directory":
-            remove_dir()
-        elif choice == "Go back":
-            quit_menu = True
+
+def add_dir():
+    """Prompts user to choose settings for new directory and adds it
+    to the directory pickle file."""
+    header = common.box("Manage savestates | Settings | Add directory")
+    keep_going = True
+    while keep_going:
+        dirs = common.load_pickle("dirs.txt")
+        common.clear()
+        print(f"{header}\n\nPlease select a directory:")
+        new_dir_path = common.get_dir_path()
+        if new_dir_path != "":
+            new_dir_action = get_dir_settings(new_dir_path)
+            new_dir = Directory(new_dir_path, new_dir_action,)
+            dirs += [new_dir]
+            common.dump_pickle(dirs, "dirs.txt")
+            common.clear()
+            print(f"{header}\n\nSuccessfully added:\n{new_dir_path}")
+            time.sleep(1)
+            user_input = input("\nAdd another directory? Press \"y\" for yes "
+                               "(press enter to finish): ").lower()
+            if user_input != "y":
+                keep_going = False
+        else:
+            keep_going = False
 
 
 def remove_dir():
     """Prompts user to select a directory, which removes it from pickle
        file list."""
-    dirs = common.load_pickle("dirs.txt")
     header = common.box("Manage savestates | Settings | Remove directory")
+    quit_menu = False
+    while not quit_menu:
+        dirs = common.load_pickle("dirs.txt")
+        common.clear()
+        print(f"{header}\n")
+        if len(dirs) > 0:
+            for i, directory in enumerate(dirs):
+                print(f"{str(i + 1)}: {directory.path}")
+            print(f"\n{str(len(dirs) + 1)}: Go back")
 
-    common.clear()
-    print(f"{header}\n")
-    for i, directory in enumerate(dirs):
-        print(f"{str(i + 1)}: {directory.path}")
-    print(f"\n{str(len(dirs) + 1)}: Go back")
-    print(f"\nChoose an option (1 - {len(dirs) + 1}): ")
-
-    # Wait for the user to input a valid value
-    choice_val = ""
-    while not (choice_val.isdigit() and 0 < int(choice_val) <= len(dirs) + 1):
-        choice_val = common.getch()
-
-    # Exit menu if user chooses "Go back"
-    if int(choice_val) == len(dirs) + 1:
-        return
-    
-    choice_index = int(choice_val) - 1
-    choice = dirs[choice_index]
-    print(f"\nThis will stop this program from organizing and backing up {choice.path}")
-    print("NOTE: The directory itself is not affected.")
-    print("Press \"y\" to confirm. Press any other key to cancel.")
-    decision = common.getch()
-    # Remove dir from list and redump the pickle
-    if "y" in decision:
-        del dirs[choice_index]
-        common.dump_pickle(dirs, "dirs.txt")
-        print(f"\nSuccessfully removed {choice.path} from this program's list")
-        time.sleep(1)
-    return
+            user_input = input(f"\nChoose a directory, or go back (1 - {len(dirs) + 1}): ")
+            if user_input.isdigit() and int(user_input) == len(dirs) + 1:  # "Go back"
+                quit_menu = True
+            elif user_input.isdigit() and 0 < int(user_input) <= len(dirs):
+                choice_index = int(user_input) - 1
+                choice_dir = dirs[choice_index]
+                common.clear()
+                confirmation = input(f"{header}\n\nThis will stop this program from organizing "
+                                     f"and backing up:\n{choice_dir.path}\n\n"
+                                    "NOTE: The directory itself is not affected.\n"
+                                    "Press \"y\" to confirm (press enter to cancel): ").lower()
+                if confirmation == "y":
+                    del dirs[choice_index]
+                    common.dump_pickle(dirs, "dirs.txt")
+                    print(f"\nSuccessfully removed {choice_dir.path} from this program's list")
+                    time.sleep(1)
+            else:
+                print("Not a valid option! Please try again.")
+                time.sleep(1)
+        else:
+            print("No directories to remove!")
+            time.sleep(1)
+            quit_menu = True
 
 
 def change_dir_settings():
     """Change dir action settings for an existing directory."""
-    dirs = common.load_pickle("dirs.txt")
     header = common.box("Manage savestates | Settings | Change directory settings")
+    quit_menu = False
+    while not quit_menu:
+        dirs = common.load_pickle("dirs.txt")
+        common.clear()
+        print(f"{header}\n")
+        if len(dirs) > 0:
+            for i, directory in enumerate(dirs):
+                print(f"{str(i + 1)}: {directory.path} "
+                      f"(setting: {directory.action.lower()})")
+            print(f"\n{str(len(dirs) + 1)}: Go back")
 
-    common.clear()
-    print(f"{header}\n")
-    for i, directory in enumerate(dirs):
-        print(f"{str(i + 1)}: {directory.path} (organization style: {directory.action})")
-    print(f"\n{str(len(dirs) + 1)}: Go back")
-    print(f"\nChoose an option (1 - {len(dirs) + 1}): ")
+            user_input = input(f"\nChoose an option (1 - {len(dirs) + 1}): ")
+            if user_input.isdigit() and int(user_input) == len(dirs) + 1:  # "Go back"
+                quit_menu = True
+            elif user_input.isdigit() and 0 < int(user_input) <= len(dirs):
+                choice_index = int(user_input) - 1
+                choice_dir = dirs[choice_index]
+                common.clear()
+                print(f"{header}\n")
 
-    # Wait for user to input a valid value
-    choice_val = ""
-    while not (choice_val.isdigit() and 0 < int(choice_val) <= len(dirs) + 1):
-        choice_val = common.getch()
+                new_dir_action = get_dir_settings(choice_dir.path)
 
-    # Quit if the user chooses "Go back"
-    if int(choice_val) == len(dirs) + 1:
-        return
-
-    choice_index = int(choice_val) - 1
-    choice = dirs[choice_index]
-    common.clear()
-    print(f"{header}\n")
-
-    # Get new option setting from user
-    new_dir_action = common.get_dir_settings(choice.path)
-
-    # Delete directory and re-add it with correct setting
-    common.clear()
-    new_dir = Directory(choice.path, new_dir_action)
-    del dirs[choice_index]
-    dirs += [new_dir]
-    common.dump_pickle(dirs, "dirs.txt")
-    print(f"{header}\n\nSuccessfully changed settings for {choice.path}")
-    time.sleep(1)
-    return
+                # Delete directory and re-add it with correct setting
+                new_dir = Directory(choice_dir.path, new_dir_action)
+                del dirs[choice_index]
+                dirs += [new_dir]
+                common.dump_pickle(dirs, "dirs.txt")
+            else:
+                print("Not a valid option! Please try again.")
+                time.sleep(1)
+        else:
+            print("No directories have been added yet!")
+            time.sleep(1)
 
 
 def change_backups_destination():
     """Change where backups go."""
     backups_directory = common.load_pickle("backups_path.txt")
-
     header = common.box("Manage savestates | Settings | Change where backups go")
     common.clear()
-    print(f"{header}\n\nPlease select a folder to store backups:")
-    time.sleep(1)
-
-    # Get the new directory and redump the pickle
+    print(f"{header}\n\nPlease select a folder for storing backups:")
     backups_dir_path = common.get_dir_path()
     if backups_dir_path != "":
-        common.clear()
         common.dump_pickle(backups_directory, "backups_path.txt")
-        print(f"{header}\n\nUpdated backups_dir_path to {backups_dir_path}")
+        print(f"\nUpdated backups_dir_path to:\n{backups_dir_path}")
+        time.sleep(2)
+
+
+def get_dir_settings(dir_path):
+    """Gets and returns action settings for a directory (new or old)."""
+    header = common.box("Manage savestates | Settings | Directory settings")
+    common.clear()
+    print(f"{header}\n\nPlease choose an option for files in {dir_path}\n")
+    menu_options = ["Trim numbered prefixes from files", "Renumber savestates and macros based on "
+                    "their names", "Do not organize"]
+    for i, option in enumerate(menu_options):
+        print(f"{str(i + 1)}: {option}")
+    
+    user_input = input(f"\nChoose an option (1 - {len(menu_options)}): ")
+    if user_input.isdigit() and 0 < int(user_input) <= len(menu_options):
+        choice = menu_options[int(user_input) - 1]
+        if choice == "Trim numbered prefixes from files":
+            setting = "trim"
+        elif choice == "Renumber savestates and macros based on their names":
+            setting = "renumber"
+        elif choice == "Do not organize":
+            setting = None
+    else:
+        print("Not a valid option! Please try again.")
         time.sleep(1)
+    return setting
