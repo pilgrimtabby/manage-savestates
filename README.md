@@ -38,7 +38,7 @@ Copy the directories you chose to a backup destination.
 
 # Installation
 
-This program requires Python >= 3.7.
+This program has been tested to work on Python >= 3.7.17.
 
 ### Windows and macOS
 
