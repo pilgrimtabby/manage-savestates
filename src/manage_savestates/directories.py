@@ -178,15 +178,16 @@ def renumber_files(path, states, macros):
             rename_file(path, path, state, states)
 
         # Renumber macro with matching text_of_name if it exists
+        matching_macros = 0
         for macro in macros:
             if macro.text_of_name == state.text_of_name:
+                matching_macros += 1
                 if macro.prefix != state.prefix:
                     macro.prefix = state.prefix
                     rename_file(path, path, macro, macros)
-                break
 
         # Create dummy macro if no matching macro exists
-        else:
+        if matching_macros == 0:
             with open(f"{path}/{state.prefix}.gzm", "a", encoding="utf-8"):
                 pass
 
@@ -246,11 +247,15 @@ def rename_file(orig_path, dest_path, file, file_list):
 
     if not os.path.exists(f"{dest_path}/{new_name}"):
         os.rename(f"{orig_path}/{file.original_name}", f"{dest_path}/{new_name}")
-        if orig_path == dest_path:
-            log_message = f"Renamed {file.original_name} to {new_name}\n"
+
+        if file.original_name == new_name:
+            log_message = f"Moved {new_name} to _other\n"
         else:
-            log_message = (f"Renamed {file.original_name} to {new_name} and moved it to "
-                           f"{dest_path}\n")
+            if dest_path == orig_path:
+                log_message = f"Renamed {file.original_name} to {new_name}\n"
+            else:
+                log_message = (f"Renamed {file.original_name} to {new_name} and moved it to "
+                               "_other\n")
         write_to_log(log_message, log_path)
         print(log_message.strip("\n"))
 
@@ -262,7 +267,7 @@ def rename_file(orig_path, dest_path, file, file_list):
         os.rename(f"{orig_path}/{file.original_name}", f"{dest_path}/{new_name}")
 
         # Log renaming of file whose name started out as new_name.
-        if dest_path == f"{orig_path}/_other":
+        if dest_path != orig_path:
             log_message = f"Renamed {new_name} to {unique_name}\n"
         else:
             log_message = f"Renamed {new_name} to {unique_name} and moved it to _other\n"
@@ -396,7 +401,7 @@ def back_up():
         common.dump_pickle(backups_path, "backups_path.txt")
 
     common.clear()
-    print(f"{header}\n\nNow backing up:")
+    print(f"{header}\n\nBackups directory is:\n{backups_path}\n\nNow backing up:")
 
     # Make timestamped directory to house backups, and copy each GZDir
     for directory in gzdirs:
