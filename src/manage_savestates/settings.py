@@ -1,18 +1,40 @@
-"""Module with code for settings menu."""
+"""Display settings menu GUI.
+
+Classes:
+    GZDirectory(path: str, action: str)
+
+Functions:
+    main()
+    add_dir()
+    remove_dir()
+    change_dir_settings()
+    set_dir_settings(dir_path: str) -> str | None
+    change_backups_destination()
+"""
 import time
 from dataclasses import dataclass
 import common
 
 
 @dataclass
-class Directory:
-    """Stores data about directories organized by directories.organize()."""
+class GZDirectory:
+    """Store information about a directory acted on by this program.
+    
+    Attributes:
+        path (str): Absolute path to the directory.
+        action (str | None): How the directory is organized.
+            `trim`: Remove numbered prefixes from files
+            `renumber`: Number files in order from 000 to 999.
+            `None`: No action taken. Can still be backed up.
+
+            See directories.py documentation / README.md for more info.
+    """
     path: str
     action: str
 
 
 def main():
-    """Menu to change program settings."""
+    """Display settings menu GUI."""
     menu_options = ["Add directory", "Remove directory", "Change directory settings",
                     "Change where backups go", "Go back"]
     quit_menu = False
@@ -30,11 +52,11 @@ def main():
         if user_input.isdigit() and 0 < int(user_input) <= len(menu_options):
             choice = menu_options[int(user_input) - 1]
             if choice == "Add directory":
-                add_dir()
+                add_gzdir()
             elif choice == "Remove directory":
-                remove_dir()
+                remove_gzdir()
             elif choice == "Change directory settings":
-                change_dir_settings()
+                change_gzdir_settings()
             elif choice == "Change where backups go":
                 change_backups_destination()
             elif choice == "Go back":
@@ -44,63 +66,70 @@ def main():
             time.sleep(1)
 
 
-def add_dir():
-    """Prompts user to choose settings for new directory and adds it
-    to the directory pickle file."""
+def add_gzdir():
+    """Add new directory to directories pickle (pickles/gzdirs.txt)."""
     header = common.box("Manage savestates | Settings | Add directory")
     keep_going = True
     while keep_going:
-        dirs = common.load_pickle("dirs.txt")
+        gzdirs = common.load_pickle("gzdirs.txt")
         common.clear()
         print(f"{header}\n\nPlease select a directory:")
-        new_dir_path = common.get_dir_path()
-        if new_dir_path != "":
-            new_dir_action = get_dir_settings(new_dir_path)
-            new_dir = Directory(new_dir_path, new_dir_action,)
-            dirs += [new_dir]
-            common.dump_pickle(dirs, "dirs.txt")
-            common.clear()
-            print(f"{header}\n\nSuccessfully added:\n{new_dir_path}")
-            time.sleep(1)
+        new_gzdir_path = common.get_file_path(file_type="dir")
+
+        if new_gzdir_path != "":
+            for gzdir in gzdirs:
+                if new_gzdir_path == gzdir.path:
+                    print("Error: You've already added this directory!")
+                    time.sleep(2)
+                    break
+            else:
+                new_gzdir = GZDirectory(new_gzdir_path, "")
+                new_gzdir.action = set_gzdir_settings(new_gzdir)
+                gzdirs += [new_gzdir]
+                common.dump_pickle(gzdirs, "gzdirs.txt")
+                common.clear()
+                print(f"{header}\n\nSuccessfully added:\n{new_gzdir_path}")
+                time.sleep(1)
+
             user_input = input("\nAdd another directory? Press \"y\" for yes "
                                "(press enter to finish): ").lower()
             if user_input != "y":
                 keep_going = False
+
         else:
             keep_going = False
 
 
-def remove_dir():
-    """Prompts user to select a directory, which removes it from pickle
-       file list."""
+def remove_gzdir():
+    """Remove directory from directories pickle (pickles/gzdirs.txt)."""
     header = common.box("Manage savestates | Settings | Remove directory")
     quit_menu = False
     while not quit_menu:
-        dirs = common.load_pickle("dirs.txt")
+        gzdirs = common.load_pickle("gzdirs.txt")
         common.clear()
         print(f"{header}\n")
-        if len(dirs) > 0:
-            for i, directory in enumerate(dirs):
-                print(f"{str(i + 1)}: {directory.path}")
-            print(f"\n{str(len(dirs) + 1)}: Go back")
+        if len(gzdirs) > 0:
+            for i, gzdirectory in enumerate(gzdirs):
+                print(f"{str(i + 1)}: {gzdirectory.path}")
+            print(f"\n{str(len(gzdirs) + 1)}: Go back")
 
-            user_input = input(f"\nChoose a directory, or go back (1 - {len(dirs) + 1}): ")
-            if user_input.isdigit() and int(user_input) == len(dirs) + 1:  # "Go back"
+            user_input = input(f"\nChoose a directory, or go back (1 - {len(gzdirs) + 1}): ")
+            if user_input.isdigit() and int(user_input) == len(gzdirs) + 1:  # "Go back"
                 quit_menu = True
-            elif user_input.isdigit() and 0 < int(user_input) <= len(dirs):
+            elif user_input.isdigit() and 0 < int(user_input) <= len(gzdirs):
                 choice_index = int(user_input) - 1
-                choice_dir = dirs[choice_index]
+                choice_gzdir = gzdirs[choice_index]
                 common.clear()
                 confirmation = input(f"{header}\n\nThis will stop this program from organizing "
-                                     f"and backing up:\n{choice_dir.path}\n\n"
-                                    "NOTE: The directory itself is not affected.\n"
-                                    "Press \"y\" to confirm (press enter to cancel): ").lower()
+                                     f"and backing up:\n{choice_gzdir.path}\n\n"
+                                     "NOTE: The directory itself is not affected.\n"
+                                     "Press \"y\" to confirm (press enter to cancel): ").lower()
                 if confirmation == "y":
-                    del dirs[choice_index]
-                    common.dump_pickle(dirs, "dirs.txt")
-                    print(f"\nSuccessfully removed {choice_dir.path} from this program's list")
+                    del gzdirs[choice_index]
+                    common.dump_pickle(gzdirs, "gzdirs.txt")
+                    print(f"\nSuccessfully removed {choice_gzdir.path} from this program's list")
                     time.sleep(1)
-                    if len(dirs) == 0:
+                    if len(gzdirs) == 0:
                         quit_menu = True
             else:
                 print("Not a valid option! Please try again.")
@@ -111,35 +140,35 @@ def remove_dir():
             quit_menu = True
 
 
-def change_dir_settings():
-    """Change dir action settings for an existing directory."""
+def change_gzdir_settings():
+    """Print / allow changes to dir.action for existing directories."""
     header = common.box("Manage savestates | Settings | Change directory settings")
     quit_menu = False
     while not quit_menu:
-        dirs = common.load_pickle("dirs.txt")
+        gzdirs = common.load_pickle("gzdirs.txt")
         common.clear()
         print(f"{header}\n")
-        if len(dirs) > 0:
-            for i, directory in enumerate(dirs):
-                if directory.action is not None:
-                    print(f"{str(i + 1)}: {directory.path} (setting: {directory.action})")
+        if len(gzdirs) > 0:
+            for i, gzdirectory in enumerate(gzdirs):
+                if gzdirectory.action is not None:
+                    print(f"{str(i + 1)}: {gzdirectory.path} (setting: {gzdirectory.action})")
                 else:
-                    print(f"{str(i + 1)}: {directory.path} (setting: do nothing)")
-            print(f"\n{str(len(dirs) + 1)}: Go back")
+                    print(f"{str(i + 1)}: {gzdirectory.path} (setting: do nothing)")
+            print(f"\n{str(len(gzdirs) + 1)}: Go back")
 
-            user_input = input(f"\nChoose a directory, or go back (1 - {len(dirs) + 1}): ")
-            if user_input.isdigit() and int(user_input) == len(dirs) + 1:  # "Go back"
+            user_input = input(f"\nChoose a directory, or go back (1 - {len(gzdirs) + 1}): ")
+            if user_input.isdigit() and int(user_input) == len(gzdirs) + 1:  # "Go back"
                 quit_menu = True
-            elif user_input.isdigit() and 0 < int(user_input) <= len(dirs):
+            elif user_input.isdigit() and 0 < int(user_input) <= len(gzdirs):
                 choice_index = int(user_input) - 1
-                choice_dir = dirs[choice_index]
+                choice_gzdir = gzdirs[choice_index]
 
                 common.clear()
                 print(f"{header}\n")
-                choice_dir.action = get_dir_settings(choice_dir.path)
+                choice_gzdir.action = set_gzdir_settings(choice_gzdir)
 
-                dirs[choice_index] = choice_dir
-                common.dump_pickle(dirs, "dirs.txt")
+                gzdirs[choice_index] = choice_gzdir
+                common.dump_pickle(gzdirs, "gzdirs.txt")
             else:
                 print("Not a valid option! Please try again.")
                 time.sleep(1)
@@ -149,39 +178,59 @@ def change_dir_settings():
             quit_menu = True
 
 
-def change_backups_destination():
-    """Change where backups go."""
-    backups_directory = common.load_pickle("backups_path.txt")
-    header = common.box("Manage savestates | Settings | Change where backups go")
-    common.clear()
-    print(f"{header}\n\nPlease select a folder for storing backups:")
-    backups_dir_path = common.get_dir_path()
-    if backups_dir_path != "":
-        common.dump_pickle(backups_directory, "backups_path.txt")
-        print(f"\nUpdated backups_dir_path to:\n{backups_dir_path}")
-        time.sleep(2)
+def set_gzdir_settings(directory):
+    """Prompt user to enter new dir.action for a directory at `path`.
 
+    Args:
+        directory (GZDirectory object): Object whose .path attribute is
+            to be modified.
+    
+    Returns:
+        setting (str | None): How the directory is organized.
+            `trim`: Remove numbered prefixes from files
+            `renumber`: Number files in order from 000 to 999.
+            `None`: No action taken. Can still be backed up.
 
-def get_dir_settings(dir_path):
-    """Gets and returns action settings for a directory (new or old)."""
+            See directories.py documentation / README.md for more info
+            on these settings.
+    """
     header = common.box("Manage savestates | Settings | Directory settings")
     common.clear()
-    print(f"{header}\n\nPlease choose an option for files in {dir_path}\n")
+    print(f"{header}\n\nPlease choose an option for files in {directory.path}\n")
     menu_options = ["Trim numbered prefixes from files", "Renumber savestates and macros based on "
                     "their names", "Do not organize"]
     for i, option in enumerate(menu_options):
         print(f"{str(i + 1)}: {option}")
-    
+
     user_input = input(f"\nChoose an option (1 - {len(menu_options)}): ")
     if user_input.isdigit() and 0 < int(user_input) <= len(menu_options):
         choice = menu_options[int(user_input) - 1]
         if choice == "Trim numbered prefixes from files":
-            setting = "trim"
-        elif choice == "Renumber savestates and macros based on their names":
-            setting = "renumber"
-        elif choice == "Do not organize":
-            setting = None
+            return "trim"
+        if choice == "Renumber savestates and macros based on their names":
+            return "renumber"
+        if choice == "Do not organize":
+            return None
     else:
         print("Not a valid option! Please try again.")
         time.sleep(1)
-    return setting
+
+
+def change_backups_destination():
+    """Change where directories.back_up() copies files."""
+    backups_directory = common.load_pickle("backups_path.txt")
+    header = common.box("Manage savestates | Settings | Change where backups go")
+    common.clear()
+    print(f"{header}\n\nPlease select a folder for storing backups:")
+    backups_dir_path = common.get_file_path(file_type="dir")
+    if backups_dir_path != "":
+        gzdirs = common.load_pickle("gzdirs.txt")
+        for gzdir in gzdirs:
+            if gzdir.path == backups_dir_path:
+                print("Error: You can't store backups in a folder you're backing up.")
+                time.sleep(2)
+                break
+        else:
+            common.dump_pickle(backups_dir_path, "backups_path.txt")
+            print(f"\nUpdated backups storage folder to:\n{backups_dir_path}")
+            time.sleep(2)

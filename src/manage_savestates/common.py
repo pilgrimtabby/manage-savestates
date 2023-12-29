@@ -1,4 +1,14 @@
-"""Supplementary functions."""
+"""Functions unrelated to any one module and used in more than one
+module.
+
+Functions:
+    box(txt)
+    clear()
+    get_file_path(file_type)
+    focus_window(window)
+    dump_pickle(data, file_name)
+    load_pickle(file_name)
+"""
 import os
 import pickle
 import platform
@@ -11,87 +21,110 @@ if platform.system() == "Windows":
 
 
 def box(txt):
-    """Wraps text inside a decorative box and returns the box."""
+    """Wraps text in a decorative box.
+    
+    Returns:
+        boxed_txt (str): The boxed text.
+    """
     txt = str(txt)
-
     side = "+"
     for _ in range(len(txt) + 4):
         side += "-"
     side += "+"
-
     middle = f"|  {txt}  |"
-
     boxed_text = f"{side}\n{middle}\n{side}"
     return boxed_text
 
 
 def clear():
-    """Clear screen and put cursor at top."""
+    """Clear screen and set cursor at top left."""
     if platform.system() == "Windows":
         os.system("cls")
     else:
         os.system("clear")
 
 
-def dump_pickle(user_data, file_name):
-    """Dump user data (dict or list) into a pickle file."""
-    program_dir_path = os.path.dirname(os.path.realpath(__file__))
-    with open(f"{program_dir_path}/pickles/{file_name}", "wb") as file:
-        pickle.dump(user_data, file)
+def get_file_path(file_type):
+    """Open a window that prompts user to select a file.
+    
+    Args:
+        file_type (str): Accepted args are "file" and "dir". This
+            function will, accordingly, ask the user to select a plain
+            old file or a directory.
 
-
-def focus_window(window=None):
-    """Bring this program's window into focus."""
-    if platform.system() == "Windows":
-        if window is not None:
-            window.SetForegroundWindow()
-    else:
-        # Applescript that finds the correct terminal window and activates it.
-        # This code can be adjusted to work with other programs by changing the word
-        # in quotes on line that says "set hw to windows whose contents...".
-        script = '''
-            tell application "Terminal"
-                activate
-                set hw to windows whose contents contains "main.py"
-                --> {window id 67 of application "Terminal"}
-                set hw1 to item 1 of hw
-                --> window id 67 of application "Terminal"
-                set index of hw1 to 1
-            end tell'''
-        subprocess.run(["osascript", "-e", script], check=False)
-
-
-def get_dir_path():
-    """Brings up a window that allows user to select a directory."""
+    Returns:
+        file_path (str): Path to the file / directory the user selected
+    """
+    # Get foreground window for focus_window call
     if platform.system() == "Windows":
         program_window = win32ui.GetForegroundWindow()
     else:
         program_window = None
-    tkinter.Tk().withdraw()  # Prevents empty tkinter window from appearing
-    dir_path = tkinter.filedialog.askdirectory()
-    focus_window(program_window)
-    return dir_path
-
-
-def get_file_path():
-    """Brings up a window that allows user to select a file."""
-    if platform.system() == "Windows":
-        program_window = win32ui.GetForegroundWindow()
+    tkinter.Tk().withdraw()  # Stop empty tkinter window from opening
+    if file_type == "file":
+        file_path = tkinter.filedialog.askopenfilename()
+    elif file_type == "dir":
+        file_path = tkinter.filedialog.askdirectory()
     else:
-        program_window = None
-    tkinter.Tk().withdraw()  # Prevents empty tkinter window from appearing
-    file_path = tkinter.filedialog.askopenfilename()
+        raise ValueError("file_type must be \"dir\" or \"file\"")
     focus_window(program_window)
     return file_path
 
 
-def load_pickle(file_name):
-    """Return data (dict or string) from a pickle file."""
+def focus_window(window=None):
+    """Bring the program's console window to the front.
+
+    This function exists because of a bug, apparently in tkinter, that
+    causes the program window not to come back into focus after the
+    user interacts with a file select dialog. 
+    
+    An unfortunate side effect is that (on macOS) all Terminal windows
+    will pop up when this function is called, but for most users this
+    is unlikely to be a significant annoyance.
+    
+    Args:
+        window (PyCWnd object | str ): 
+            On Windows, accepts a win32ui PyCWnd object obtained by 
+                calling, for example, win32ui.GetForegroundWindow().
+            On macOS, accepts a string (the title of the terminal 
+                window).
+    """
+    if platform.system() == "Windows":
+        if window is not None:
+            try:
+                window.SetForegroundWindow()
+            # Weird bugs sometimes happen -- ignore those
+            except win32ui.error:
+                pass
+    else:
+        # Call applescript that focuses window.
+        program_path = os.path.dirname(os.path.realpath(__file__))
+        script = f"{program_path}/scripts/applescript/focus_window.applescript"
+        subprocess.run(["osascript", script], check=False)
+
+
+def dump_pickle(data, file_name):
+    """Pickles data (dict or list) into file_name.
+    
+    file_name is a relative path; it is really the name of a file 
+    found in src/pickles/.
+    """
     program_dir_path = os.path.dirname(os.path.realpath(__file__))
-    # Create the pickles directory if it doesn't exists yet
+    with open(f"{program_dir_path}/pickles/{file_name}", "wb") as file:
+        pickle.dump(data, file)
+
+
+def load_pickle(file_name):
+    """Loads the contents of a pickle at file_name.
+    
+    file_name is a relative path; it is really the name of a file 
+    found in src/pickles/.
+    """
+    program_dir_path = os.path.dirname(os.path.realpath(__file__))
+    # Create the pickles directory if it doesn't exist
     if not os.path.isdir(f"{program_dir_path}/pickles"):
         os.mkdir(f"{program_dir_path}/pickles")
-    # Create the pickle file with an empty list if it doesn't exist yet
+    # Create the pickle file with an empty list if it doesn't exist
     if not os.path.exists(f"{program_dir_path}/pickles/{file_name}"):
         dump_pickle([], file_name)
     # Read the pickle file
