@@ -1,5 +1,8 @@
-"""Display user menu that allows user to back up organize directories,
-   back up directories, change settings, or quit.
+"""Display main menu GUI.
+
+Functions:
+    main()
+    exit_screen()
 """
 import platform
 import time
@@ -49,7 +52,7 @@ def main():
 
 
 def exit_screen():
-    """Shows splash screen when program is exiting."""
+    """Display splash screen on exit."""
     advanced_cursor.hide()
     if platform.system() != "Windows":
         chime.theme("mario")
