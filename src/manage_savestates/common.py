@@ -91,7 +91,11 @@ def focus_window(window=None):
     """
     if platform.system() == "Windows":
         if window is not None:
-            window.SetForegroundWindow()
+            try:
+                window.SetForegroundWindow()
+            # Weird bugs sometimes happen -- ignore those
+            except win32ui.error:
+                pass
     else:
         # Call applescript that focuses window.
         program_path = os.path.dirname(os.path.realpath(__file__))

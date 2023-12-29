@@ -81,6 +81,10 @@ def organize():
         elif gzdirectory.action is not None:
             print(f"Organizing files in {gzdirectory.path}")
 
+            # Create _other folder if it doesn't exist
+            if not os.path.exists(f"{gzdirectory.path}/_other"):
+                os.mkdir(f"{gzdirectory.path}/_other")
+
             # Create list of savestate and macro files in GZDirectory
             state_and_macro_names = sorted([x for x in os.listdir(gzdirectory.path)
                                            if (x.endswith(".gzs") or x.endswith(".gzm"))

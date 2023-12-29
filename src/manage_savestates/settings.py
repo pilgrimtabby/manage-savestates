@@ -77,13 +77,19 @@ def add_gzdir():
         new_gzdir_path = common.get_file_path(file_type="dir")
 
         if new_gzdir_path != "":
-            new_gzdir = GZDirectory(new_gzdir_path, "")
-            new_gzdir.action = set_gzdir_settings(new_gzdir)
-            gzdirs += [new_gzdir]
-            common.dump_pickle(gzdirs, "gzdirs.txt")
-            common.clear()
-            print(f"{header}\n\nSuccessfully added:\n{new_gzdir_path}")
-            time.sleep(1)
+            for gzdir in gzdirs:
+                if new_gzdir_path == gzdir.path:
+                    print("Error: You've already added this directory!")
+                    time.sleep(2)
+                    break
+            else:
+                new_gzdir = GZDirectory(new_gzdir_path, "")
+                new_gzdir.action = set_gzdir_settings(new_gzdir)
+                gzdirs += [new_gzdir]
+                common.dump_pickle(gzdirs, "gzdirs.txt")
+                common.clear()
+                print(f"{header}\n\nSuccessfully added:\n{new_gzdir_path}")
+                time.sleep(1)
 
             user_input = input("\nAdd another directory? Press \"y\" for yes "
                                "(press enter to finish): ").lower()
@@ -218,6 +224,13 @@ def change_backups_destination():
     print(f"{header}\n\nPlease select a folder for storing backups:")
     backups_dir_path = common.get_file_path(file_type="dir")
     if backups_dir_path != "":
-        common.dump_pickle(backups_directory, "backups_path.txt")
-        print(f"\nUpdated backups_dir_path to:\n{backups_dir_path}")
-        time.sleep(2)
+        gzdirs = common.load_pickle("gzdirs.txt")
+        for gzdir in gzdirs:
+            if gzdir.path == backups_dir_path:
+                print("Error: You can't store backups in a folder you're backing up.")
+                time.sleep(2)
+                break
+        else:
+            common.dump_pickle(backups_dir_path, "backups_path.txt")
+            print(f"\nUpdated backups storage folder to:\n{backups_dir_path}")
+            time.sleep(2)
