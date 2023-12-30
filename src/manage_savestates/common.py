@@ -58,8 +58,6 @@ def get_file_path(file_type):
     # Get foreground window for focus_window call
     if platform.system() == "Windows":
         program_window = win32ui.GetForegroundWindow()
-        if not "command prompt" in program_window.GetWindowText().lower():
-            program_window = None
     else:
         program_window = None
     tkinter.Tk().withdraw()  # Stop empty tkinter window from opening
